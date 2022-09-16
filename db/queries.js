@@ -1,22 +1,27 @@
 const mysql = require('mysql2');
-const questionsData = require('../script/questions');
-const cTable = require('console.table');
+// const questionsData = require('../script/questions');
+// const cTable = require('console.table');
+require('dotenv').config();
 
+// const { viewTables, addInfo, updateEmployeeInfo, queryInfo } = require('../script/queryFunctions')
 
 // Connect to database
 const db = mysql.createConnection(
+    
     {
       host: 'localhost',
-      user: 'root',
-      password: 'FGAbBb#22',
-      database: 'employee_tracker'
-    },
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    }
   );
 
 
-const funtionManager = async () => {
+const functionManager = async () => {
 
-    const firstAnswers = await questionsData.firstQuestionaire();
+    // const firstAnswers = await questionsData.firstQuestionaire();
+
+/*
 
     if (firstAnswers.action == 'View Table Contents' ) {
         const tableName = firstAnswers.view.toLowerCase();
@@ -58,7 +63,7 @@ const funtionManager = async () => {
 
         if (firstAnswers.add == 'Employee') {
             let queryTable = firstAnswers.add.toLowerCase();
-            let fieldNames = `first_name, last_name, role_id, manager_id`;
+            let fieldNames = `first_name, last_name, role_id, manager_id, is_manager`;
 
             let queryRoles = await getRolesList();
 
@@ -69,20 +74,26 @@ const funtionManager = async () => {
             let queryManagers = await getManagerList()
 
             queryManagers.forEach(element => {
-                let idtext = element.manager_id.toString().padStart(4,'0');
+                let idtext = element.id.toString().padStart(4,'0');
                 let paramtext = `${idtext} -  ${element.first_name} ${element.last_name} - ${element.title}`
                 managerList.push(paramtext);
             });
-            managerList.push('NULL -  N/A');
+            managerList.push('MNGR  -->  ADD AS MANAGER <--');
 
-            const addEmployeeInfo = await questionsData.addEmployeeQuestionaire(rolesList, managerList);
-            
+            const addEmployeeInfo = await questionsData.addEmployeeQuestionaire(rolesList, managerList);          
             const roleId = queryRoles.filter((x) => x.title == addEmployeeInfo.addRoleEmployee)[0].id
 
             let managerId = addEmployeeInfo.addManagerEmployee.substring(0,4);
-            managerId == "NULL " ? managerId = null : Number(managerId);
+            let isManager = 0;
 
-            let values = `"${addEmployeeInfo.addFistName}", "${addEmployeeInfo.addSecondName}", ${roleId}, ${managerId}`
+            if (managerId == "MNGR") {
+                managerId = null
+                isManager = 1;                
+            } else {
+                Number(managerId)
+            };
+
+            let values = `"${addEmployeeInfo.addFistName}", "${addEmployeeInfo.addSecondName}", ${roleId}, ${managerId}, ${isManager}`
 
             console.log('queryTable, fieldNames, values --',queryTable, '--' ,fieldNames, '--', values)
 
@@ -119,11 +130,11 @@ const funtionManager = async () => {
             let queryManagers = await getManagerList()
 
             queryManagers.forEach(element => {
-                let idtext = element.manager_id.toString().padStart(4,'0');
+                let idtext = element.id.toString().padStart(4,'0');
                 let paramtext = `${idtext} -  ${element.first_name} ${element.last_name} - ${element.title}`
                 optionList.push(paramtext);                
             });
-            optionList.push('NULL -  N/A');
+            optionList.push('MNGR  -->  ADD AS MANAGER <--');
 
         }
 
@@ -132,37 +143,72 @@ const funtionManager = async () => {
         let idtext = updateEmployeeRole.Employee.substring(0,4);
         idtext = Number(idtext);
         let updateValue;
-        let updateField = 'role_id'
 
         if (updateAction == 'Update Role') {
             updateValue = queryRoles.filter((x) => x.title == updateEmployeeRole.updateEmployeeRole)[0].id
+            updateValue = `role_id = ` + updateValue;
+
         } else {
             updateValue = updateEmployeeRole.updateEmployeeManager.substring(0,4);
-            updateValue == 'NULL ' ? updateValue = null : Number(updateValue);
-            updateField = 'manager_id'
+            updateValue == 'MNGR' ? updateValue = 'manager_id = null, is_manager =1' : updateValue = `manager_id = ${Number(updateValue)}, is_manager = 0`;
         }
 
-        console.log("updateField, updateValue, idtext",updateField, updateValue, idtext)
 
-        updateEmployee(updateField, updateValue, idtext);
+        updateEmployee(updateValue, idtext);
         let employeeName = updateEmployeeRole.Employee.split('-')[1]
 
-        console.log(`\nThe role of employee${employeeName}has been updated succesfully added!!`)
+        console.log(`\nThe role of employee${employeeName}has been updated succesfully!!`)
         await showTable('employee'); 
 
     }
 
-    await funtionManager();
+    if (firstAnswers.action == 'Query Info') {
+
+        let query = firstAnswers.queries;
+
+        if ( query == 'Emplyees by Manager' ) {
+
+            const optionList = [];
+            let queryManagers = await getManagerList()
+
+            queryManagers.forEach(element => {
+                let idtext = element.id.toString().padStart(4,'0');
+                let paramtext = `${idtext} -  ${element.first_name} ${element.last_name} - ${element.title}`
+                optionList.push(paramtext);                
+            });
+            
+            employeesManager = await questionsData.employeesByManagersQuestionaire(optionList);
+            employeesManager = Number(employeesManager.manager.substring(0,4));
+
+            queryValue = queryManagers.filter((x) => x.id == employeesManager)[0].id;
+
+            managerEmployeesTable = await getManagerEmployees(queryValue);
+
+            console.table('\n\n', managerEmployeesTable)
+
+        } else if (query == 'Employees by Department') {
+
+            let queryDepartments = await getDepartmentList();
+
+            const departmentlist = [];
+            queryDepartments.forEach(list => departmentlist.push(list.department_name))
+            const addDepartmentInfo = await questionsData.employeesByDepartmentQuestionaire(departmentlist);
+
+            const departmentId = queryDepartments.filter((x) => x.department_name == addDepartmentInfo.department)[0].id
+
+            const departmentEmployeeTable = await employeeDepartmentQuery(departmentId);
+            console.table('\n\n', departmentEmployeeTable)
+
+        } else {
+            const departmentBudget = await departmentBudgetQuery();
+            console.table('\n\n', departmentBudget);
+        }
+
+    }
+*/
+
+    await functionManager();
 }
-
-
-
-
-
-
-
-
-
 
 
 // --------- QUERIES-----------
@@ -170,6 +216,13 @@ const funtionManager = async () => {
 const addQuery = async (table, fields, values) => {
     let addedRecord = await db.promise().query(`INSERT INTO ${table} (${fields}) VALUES (${values});`)
 }
+
+const viewTableQuery = async(queryFields, table, addedQuery) => {
+    viewTableResults = await db.promise().query(`SELECT ${queryFields} FROM ${table}${addedQuery}`)
+    console.log('22222',queryFields, table, addedQuery )
+    return viewTableResults = viewTableResults[0]
+}
+
 
 const getDepartmentList = async () => {
     let departmentList = await db.promise().query(`SELECT * FROM department`);
@@ -188,117 +241,54 @@ const getEmployeeList = async () => {
 }
 
 const getManagerList = async () => {
-    let managerList = await db.promise().query(`SELECT t1.manager_id, t2.first_name, t2.last_name, role.title FROM employee t1 INNER JOIN employee t2 ON t1.manager_id = t2.id JOIN role ON t2.role_id = role.id GROUP BY t1.manager_id`);
+    // let managerList = await db.promise().query(`SELECT t1.manager_id, t2.first_name, t2.last_name, role.title FROM employee t1 INNER JOIN employee t2 ON t1.manager_id = t2.id JOIN role ON t2.role_id = role.id GROUP BY t1.manager_id`);
+    let managerList = await db.promise().query(`SELECT employee.id, employee.first_name, employee.last_name, role.title FROM employee JOIN role ON employee.role_id = role.id WHERE employee.is_manager = 1`);
     return managerList = managerList[0];
 }
 
-const updateEmployee = async (updateField, updateValue, idtext) => {
-    let employeeInfo = await db.promise().query(`UPDATE employee SET ${updateField} = ${updateValue} WHERE id = ${idtext}`);
+const updateEmployee = async (updateValue, idtext) => {
+    let employeeInfo = await db.promise().query(`UPDATE employee SET ${updateValue} WHERE id = ${idtext}`);
     return employeeInfo = employeeInfo[0];
 }
 
+const getManagerEmployees = async (managerId) => {
+    let managerEmployees = await db.promise().query(`SELECT t1.id, t1.first_name, t1.last_name, role.title, t1.manager_id, t2.first_name as Manager_Name FROM employee t1 INNER JOIN employee t2 ON t1.manager_id = t2.id JOIN role ON t1.role_id = role.id WHERE t1.manager_id = ${managerId}`);
+    return managerEmployees = managerEmployees[0];
+}
+
+const employeeDepartmentQuery = async (departmentId) => {
+    let employeeByDepartment = await db.promise().query(`SELECT department.id AS Dept_ID, department.department_name, employee.id , employee.first_name , employee.last_name, role.title, FORMAT(role.salary, 'N2', 'en-us') AS Salary FROM employee 
+    INNER JOIN role ON employee.role_id = role.id
+    INNER JOIN department ON  department_id = department.id
+    WHERE department.id = ${departmentId}`);
+    return employeeByDepartment = employeeByDepartment[0];
+}
+
+const departmentBudgetQuery = async () => {
+    let departmentBudget = await db.promise().query(`SELECT department.id AS Dept_ID, department.department_name, FORMAT(SUM(role.salary), 'N2', 'en-us') AS Total_Budget
+    FROM employee
+    INNER JOIN role ON employee.role_id = role.id
+    INNER JOIN department ON  department_id = department.id
+    GROUP BY department.id`);
+    return departmentBudget = departmentBudget[0];
+}
 
 
 // --------- Populate Tables-----------
 
-const showTable = async  (table) => {
-
-    // const dep_titles = [
-    //     { key: 'id', text: 'ID', len: 3 },
-    //     { key: 'department_name', text: 'Department', len: 25 },
-    // ];
-
-    // const role_titles = [
-    //     { key: 'id', text: 'ID', len: 3 },
-    //     { key: 'title', text: 'Title', len: 30 },
-    //     { key: 'salary', text: 'Salary', len: 10 },
-    //     { key: 'department_id', text: 'Dep ID', len: 6 },
-    //     { key: 'department_name', text: 'Department', len: 25 },
-    // ];
-
-    // const employee_titles = [
-    //     { key: 'id', text: 'ID', len: 3 },
-    //     { key: 'first_name', text: 'First Name', len: 15 },
-    //     { key: 'last_name', text: 'Last Name', len: 15 },
-    //     { key: 'role_id', text: 'Role ID', len: 7 },
-    //     { key: 'title', text: 'Title', len: 30 },
-    //     { key: 'manager_id', text: 'Manager ID', len: 10 },
-    // ];
-
-
-
-    if (table == 'department') {
-        // t_head = dep_titles;
-        queryFields = `*`;
-        addedQuery = ``;
-        tableBanner = questionsData.departmentBanner;
-    } else if (table == 'role') {
-        // t_head = role_titles;
-        queryFields = `role.id, role.title, role.salary, role.department_id, department.department_name`;
-        addedQuery = ` JOIN department ON role.department_id = department.id ORDER BY role.id ASC`;
-        tableBanner = questionsData.roleBanner;
-    } else if (table == 'employee') {
-        // t_head = employee_titles;
-        queryFields = `employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, employee.manager_id`;
-        addedQuery = ` JOIN role ON employee.role_id = role.id ORDER BY employee.id ASC`;
-        tableBanner = questionsData.employeeBanner;
-    }
-
-
-    let results;
-
-    results = await db.promise().query(`SELECT ${queryFields} FROM ${table}${addedQuery}`)
-    // table != 'employee' ? results = await db.promise().query(`SELECT ${queryFields} FROM ${table}${addedQuery}`)
-    //     : results = await db.promise().query(`SELECT t1.id AS empId, t1.first_name AS firstName, t1.last_name as lastName, role.title as role, t1.manager_id as manId, t2.first_name as managerName
-    //     FROM employee t1 
-    //     JOIN employee t2 ON t1.manager_id = t2.id 
-    //     JOIN role ON t1.role_id = role.id
-    //     ORDER BY t1.id ASC`)
-    
-    results = results[0];
-
-
-    // console.log('dewdewdedewdew', results)
-
-
-    // PRINTING SCRIPT
-
-    
-    // title_text = ``;
-    // title_border = ``;
-
-    // t_head.forEach(title => {
-    //     title_text += title.text.toString().padEnd(title.len, ' ') + ' | ';
-    //     title_border += ' -'.padEnd(title.len + 1, '-') + '  ';
-    // });
-
-    console.log('\n', tableBanner);
-    console.table(results);
-
-
-    // console.log('\n', title_text)
-    // console.log(title_border);
-    
-
-    // results.forEach(element => {
-    //     table_row = ``;
-        
-    //     t_head.forEach(title => {
-            
-    //         element[title.key] == null ?  celltext = 'null' : celltext = element[title.key]
-
-    //         table_row += celltext.toString().padEnd(title.len, ' ') + ' | ';
-    //     });
-
-    //     console.log('\033[0m',table_row)
-    // });
-    
-
-}
-
-
 
 module.exports = {
-    funtionManager,
+    functionManager,
+
+    addQuery,
+    getDepartmentList,
+    getRolesList,
+    getEmployeeList,
+    getManagerList,
+    updateEmployee,
+    getManagerEmployees,
+    employeeDepartmentQuery,
+    departmentBudgetQuery,
+    viewTableQuery
 
 }
