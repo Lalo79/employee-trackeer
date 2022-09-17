@@ -5,6 +5,7 @@
 - [Description](#description)
 - [Usage](#usage)  
 - [Questions](#questions)  
+- [Video](#Video)  
   
 
 
@@ -17,6 +18,12 @@ Employee Tracker is a simple SQL app which keeps information of Departents, Role
 
   ![Employee Tracker Main](./images/employee_tracker_main.png)
 
+
+## VIDEO
+For more detailed information and a walkthrough the code and app funcionality, please refer to the following video.  
+
+[Walk Through Code & Functionality](https://watch.screencastify.com/v/pEwS5DVglbbadxlnkTMR)
+
 ## Usage  
 
 The Employee Tracker allows the user to perform queries, add and modify questions.
@@ -28,8 +35,7 @@ The app starts prompting the user to select 4 main functions
 - Update Employee Info
 - Query Info
 
-*For more detailed information and a walkthrough the code and app funcionality, please refer to the following video
-[Walk Through Code & Functionality](https://watch.screencastify.com/v/pEwS5DVglbbadxlnkTMR)
+
 
 
 ### VIEW TABLE CONTENTS  
