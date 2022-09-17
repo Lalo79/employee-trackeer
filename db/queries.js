@@ -19,7 +19,6 @@ const addQuery = async (table, fields, values) => {
 
 const viewTableQuery = async(queryFields, table, addedQuery) => {
     viewTableResults = await db.promise().query(`SELECT ${queryFields} FROM ${table}${addedQuery}`)
-    console.log('22222',queryFields, table, addedQuery )
     return viewTableResults = viewTableResults[0]
 }
 
@@ -36,12 +35,10 @@ const getRolesList = async () => {
 
 const getEmployeeList = async () => {
     let employeeList = await db.promise().query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, employee.manager_id FROM employee JOIN role ON employee.role_id = role.id ORDER BY employee.id ASC`);
-    // let employeeList = await db.promise().query(`SELECT t1.id, t1.first_name, t1.last_name, t1.title, t1.manager_id, t2.first_name FROM employee t1 INNER JOIN employee t2 ON t1.manager_id = t2.i JOIN role ON t1.role_id = role.id ORDER BY t1.id ASC`);
     return employeeList = employeeList[0];
 }
 
 const getManagerList = async () => {
-    // let managerList = await db.promise().query(`SELECT t1.manager_id, t2.first_name, t2.last_name, role.title FROM employee t1 INNER JOIN employee t2 ON t1.manager_id = t2.id JOIN role ON t2.role_id = role.id GROUP BY t1.manager_id`);
     let managerList = await db.promise().query(`SELECT employee.id, employee.first_name, employee.last_name, role.title FROM employee JOIN role ON employee.role_id = role.id WHERE employee.is_manager = 1`);
     return managerList = managerList[0];
 }
@@ -75,8 +72,6 @@ const departmentBudgetQuery = async () => {
 
 
 module.exports = {
-    functionManager,
-
     addQuery,
     getDepartmentList,
     getRolesList,

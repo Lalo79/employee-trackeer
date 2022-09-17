@@ -4,7 +4,6 @@ const cTable = require('console.table');
 
 
 
-
 const queryManager = async() => {
 
     const initialAnswers = await questionsData.firstQuestionaire();
@@ -19,17 +18,19 @@ const queryManager = async() => {
 }
 
 
-
-
-
+// Function for viewing tables content.
 const viewTables = async (firstAnswers) => {
     const tableName = firstAnswers.view.toLowerCase();
     await showTable(tableName);
 }
 
 
+
+// Functions in charge of adding info to tables
+
 const addInfo = async (firstAnswers) => {
 
+    // FUnction in charge of adding a New Department
     if (firstAnswers.add == 'Department') {
         let queryTable = firstAnswers.add.toLowerCase();
         let fieldNames = 'department_name';
@@ -41,6 +42,8 @@ const addInfo = async (firstAnswers) => {
         console.log(`\nDepartment ${values} succesfully added!!`)
     }
 
+    
+    // FUnction in charge of adding a New Role
     if (firstAnswers.add == 'Role') {
         let queryTable = firstAnswers.add.toLowerCase();
         let fieldNames = `title, salary, department_id`;
@@ -61,6 +64,7 @@ const addInfo = async (firstAnswers) => {
         console.log(`\nNew role ${addDepartmentInfo.addRoleName} succesfully added!!`)
     }
 
+    // FUnction in charge of adding a New Employee
     if (firstAnswers.add == 'Employee') {
         let queryTable = firstAnswers.add.toLowerCase();
         let fieldNames = `first_name, last_name, role_id, manager_id, is_manager`;
@@ -95,8 +99,6 @@ const addInfo = async (firstAnswers) => {
 
         let values = `"${addEmployeeInfo.addFistName}", "${addEmployeeInfo.addSecondName}", ${roleId}, ${managerId}, ${isManager}`
 
-        console.log('queryTable, fieldNames, values --',queryTable, '--' ,fieldNames, '--', values)
-
         await queries.addQuery(queryTable, fieldNames, values)
         await showTable(queryTable);
 
@@ -104,6 +106,9 @@ const addInfo = async (firstAnswers) => {
     }
 }
 
+
+
+// Function in charge of updating employee Role and Manager
 const updateEmployeeInfo = async (firstAnswers) => {
 
     let updateAction = firstAnswers.update;
@@ -161,7 +166,7 @@ const updateEmployeeInfo = async (firstAnswers) => {
     await showTable('employee'); 
 }
 
-
+// Functions for cross-info queries
 const queryInfo = async (firstAnswers) => {
 
     let query = firstAnswers.queries;
@@ -206,7 +211,7 @@ const queryInfo = async (firstAnswers) => {
 
 }
 
-
+// Functions to display Data
 const showTable = async  (table) => {
 
     if (table == 'department') {
@@ -225,7 +230,6 @@ const showTable = async  (table) => {
 
      
     let results = await queries.viewTableQuery(queryFields, table, addedQuery)
-
 
 
     console.log('\n', tableBanner);

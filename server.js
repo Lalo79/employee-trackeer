@@ -1,9 +1,6 @@
 const express = require('express');
-// Import and require mysql2
-// const mysql = require('mysql2');
 
 const { banner } = require('./script/questions');
-const { functionManager } = require('./db/queries');
 const { queryManager } = require('./script/queryFunctions');
 
 const PORT = process.env.PORT || 3001;
@@ -19,9 +16,8 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-//   console.log(`Server running on port ${PORT}`);
+  // console.log(`Server running on port ${PORT}`);
 });
-
 
 
 const init = async () => {
@@ -29,7 +25,6 @@ const init = async () => {
     console.log(banner);
     console.log('  --  WELCOME TO THE EMPLOYEE TRACKER  --  ');
     
-    // await functionManager();
     await queryManager();
 
     console.log('\n\nNext process')
